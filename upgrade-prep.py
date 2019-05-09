@@ -39,12 +39,17 @@ encryption_url = base_url + "node/class/pkiExportEncryptionKey.json"
 #pkiExportEncryptionKey
 encryption_req = apic.get(encryption_url, verify=False)
 
+print("*"*20 + "Configuration Export/Snapshot Encryption"+ "*"*20)
+
 encryption_status = json.loads(encryption_req.content)
 if 'yes' in encryption_status['imdata'][0]['pkiExportEncryptionKey']['attributes']['keyConfigured']:
     print('Encryption Status: Enabled')
 if 'no' in encryption_status['imdata'][0]['pkiExportEncryptionKey']['attributes']['keyConfigured']:
     print('Encryption Status: Not Enabled')
 
+print('Encryption Enabled is recommended to include passwords and other fields in the configuration snapshot and exports.\nThis smooths out the process of importing the configuation.')
+
+print("\n")
 
 ##Check for latest config backup? Remote Location?
 #node/class/configJob.json?query-target-filter=and(eq(configJob.type,"export"))
@@ -53,12 +58,14 @@ export_jobstatus_req = apic.get(export_jobstatus_url, verify=False)
 
 export = json.loads(export_jobstatus_req.content)['imdata'][0]['configJob']['attributes']
 last_export = parsetime(export['executeTime'])
-
-print('Last Remote Configuration Export: ' + last_export.strftime("%y-%m-%d %I:%M") + 'status: ' + export['details'])
+print("*"*20 + "Configuration Export" + "*"*20)
+print('Last Remote Configuration Export: ' + last_export.strftime("%y-%m-%d %I:%M") + ' Status: ' + export['details'])
 
 if 'success' not in export['details'].lower():
     print('Ensure you have a remote copy of the Configuration backup before proceeding with an upgrade.')
-
+else:
+    print('A Recent remote copy of the configuration is always recommended.')
+print("\n")
 
 ##Check if Fully Fit
 #infraWiNode
@@ -74,19 +81,35 @@ for node in json.loads(cluster_health_req.content)['imdata']:
     foreign_apic = node['infraWiNode']['attributes']['id']  
     health = node['infraWiNode']['attributes']['health']
     apic_health.append([local_apic, foreign_apic, health])
-print("Health Status, All APICs should see all other APICs as 'Fully Fit'")
-print(tabulate(apic_health, headers='firstrow'))
+print("*"*20 + "APIC Cluster Health" + "*"*20)
+print("All APICs should see all other APICs as 'Fully Fit'")
+apic_healthy = False
+for row in apic_health[1:]:
+    if 'fully-fit' in row[2]:
+        apic_healthy = True
+    else:
+        print(tabulate(apic_health, headers='firstrow'))
+        break
+if not apic_healthy:
+    print('Please determine the cause for the APIC Cluster not being fully-fit before proceeding with any upgrades.')
+else:
+    print('The APIC Cluster is fully-fit and safe to proceed with an upgrade.')
+        
+print("\n")
+
+
     
 #Faults 
 faults_url = base_url + 'node/class/faultInfo.json?query-target-filter=or(eq(faultInfo.severity,"major"),eq(faultInfo.severity,"critical"))'
 faults_req = apic.get(faults_url, verify=False)
 faults_body = json.loads(faults_req.content)
 
-
+print("*"*20 + "Fabric Major and Critial Faults" + "*"*20)
+print("It is recommended that these faults are addressed or accounted for before proceeding with the upgrade.")
 if 'faultInst' in faults_body['imdata'][0].keys() or 'faultDelegate' in faults_body['imdata'][0].keys():
     print("Total Faults: "+ faults_body['totalCount'])
     faults = {}
-    faultsum = [['Fault Code', 'Fault Count', 'More Info']]
+    faultsum = [['Code', 'Count', 'More Info']]
     for fault in faults_body['imdata']:
         try:
             code = fault['faultInst']['attributes']['code']
@@ -102,12 +125,14 @@ if 'faultInst' in faults_body['imdata'][0].keys() or 'faultDelegate' in faults_b
         faultsum.append([fault, faults[fault], 'https://'+args.apic+'/doc/html/FAULT-'+fault+'.html' ])
 
 print(tabulate(faultsum, headers='firstrow'))
+print("\n")
 
 #Upgrade Path URL - Get Current version
 #firmwareRunning
 firmware_url = base_url + 'node/class/firmwareRunning.json'
 firmware_req = apic.get(firmware_url, verify=False)
 firmware = json.loads(firmware_req.content)['imdata'][0]['firmwareRunning']['attributes']['peVer']
+print("*"*20 + "Fabric Running Software Version" + "*"*20)
 print('Currently Running Version: '+ firmware)
 if int(firmware[0]) > 3:
     pass
