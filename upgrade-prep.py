@@ -1,3 +1,5 @@
+
+
 import requests
 import json
 import os
@@ -23,7 +25,7 @@ args = parser.parse_args()
 base_url = "https://" + args.apic + "/api/"
 
 #Assemble Login URL
-login_url = base_url + "aaaLogin.json" 
+login_url = base_url + "aaaLogin.json"
 #+ args.format
 
 #Login Body Post
@@ -74,11 +76,11 @@ cluster_health_url = base_url + "node/class/infraWiNode.json"
 cluster_health_req = apic.get(cluster_health_url, verify=False)
 
 
-#print out view of cluster health from each apic 
+#print out view of cluster health from each apic
 apic_health = [['APIC', 'View Of', 'Health']]
 for node in json.loads(cluster_health_req.content)['imdata']:
     local_apic = node['infraWiNode']['attributes']['dn'].split('/')[2].split('-')[1]
-    foreign_apic = node['infraWiNode']['attributes']['id']  
+    foreign_apic = node['infraWiNode']['attributes']['id']
     health = node['infraWiNode']['attributes']['health']
     apic_health.append([local_apic, foreign_apic, health])
 print("*"*20 + "APIC Cluster Health" + "*"*20)
@@ -94,12 +96,12 @@ if not apic_healthy:
     print('Please determine the cause for the APIC Cluster not being fully-fit before proceeding with any upgrades.')
 else:
     print('The APIC Cluster is fully-fit and safe to proceed with an upgrade.')
-        
+
 print("\n")
 
 
-    
-#Faults 
+
+#Faults
 faults_url = base_url + 'node/class/faultInfo.json?query-target-filter=or(eq(faultInfo.severity,"major"),eq(faultInfo.severity,"critical"))'
 faults_req = apic.get(faults_url, verify=False)
 faults_body = json.loads(faults_req.content)
@@ -142,6 +144,3 @@ elif int(firmware[0]) < 3:
 elif int(firmware[2]) < 2:
     print('Current Running version is no longer recommended. Please see the upgrade Matrix tool to plan an upgrade to 3.2.5 or above.')
     print('https://www.cisco.com/c/dam/en/us/td/docs/Website/datacenter/apicmatrix/index.html')
-
-
-
