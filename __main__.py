@@ -3,20 +3,25 @@
     the script assumes it is executing on APIC but will try to auto-detect if appropriate
     arguments are not provided.  Use --help for more help.
 """
+
+import argparse
+import logging
+import os
+import re
+import sys
+import traceback
+
+# manually update path to include packages bundled within this project
+sys.path.append("%s/checks/packages/" % os.path.dirname(os.path.realpath(__file__)))
+
 from checks.lib.utils import OnApicSession
 from checks.lib.utils import get_cmd
 from checks.lib.utils import get_user_input
 from checks.lib.utils import setup_logger
 from checks.check_executor import CheckExecutor
 
-import argparse
-import logging
-import re
-import sys
-import traceback
-
+# module level logging
 logger = logging.getLogger(__name__)
-
 
 if __name__ == "__main__":
 

@@ -11,7 +11,8 @@ logger = logging.getLogger(__name__)
 
 ALL_CHECKS = [
     # list of tuples containing package and module that has execute_check function
-    ("encryption_key", "EncryptionKeyCheck")
+    ("encryption_key", "EncryptionKeyCheck"),
+    ("config_export", "ConfigExportCheck"),
 ]
 
 # moduleNotFoundError present in 3.6 only
@@ -31,9 +32,8 @@ class CheckExecutor(object):
         headers = [
             {"name": "Check", "length": 25},
             {"name": "Description", "length": 50},
-            {"name": "Pass/Fail", "length": 15},
-            {"name": "Details", "length": 20},
-            {"name": "ExecutionTime", "length": 15},
+            {"name": "Pass/Fail", "length": 10},
+            {"name": "Pass/Fail Reason", "length": 50},
         ]
         results = []
         total_checks = 0
@@ -57,30 +57,35 @@ class CheckExecutor(object):
                         setattr(check, "description", check.__doc__)
                     else:
                         setattr(check, "description", "")
+                # force description to be single line
+                check.description = " ".join(check.description.strip().split())
                 if hasattr(check, "execute_check"):
                     # will read check.success or return value from execute_check, preferring return
                     # value if not None
                     total_checks+=1
-                    success = check.execute_check()
-                    if success is None:
-                        check.success = success
-                    if success:
-                        total_pass+=1
-                    else:
-                        total_fail+=1
-                    results.append([
-                        classname,
-                        check.description,
-                        #"pass" if success else "\033[1;37;41m FAIL",
-                        "pass" if success else "FAIL",
-                        check.details,
-                        "%0.3f sec" % (time.time() - ts),
-                    ])
+                    try:
+                        success = check.execute_check()
+                        if success is not None:
+                            check.success = success
+                        success = check.success
+                        if success:
+                            total_pass+=1
+                        else:
+                            total_fail+=1
+                        results.append([
+                            "%s\ntime: %0.3f" % (classname, time.time() - ts),
+                            check.description,
+                            #"pass" if success else "\033[1;37;41m FAIL",
+                            "Pass" if success else "FAIL",
+                            check.details,
+                        ])
+                    except Exception as e:
+                        logger.error("exeception occurred executing check %s: %s", classname, e)
+                        logger.debug("Traceback:\n%s", traceback.format_exc())
                 else:
                     logger.error("%s missing required execute_check function", classname)
-
             except AttributeError as e:
-                logger.error("classname %s not found in package", classname, package)
+                logger.error("classname %s not found in package %s", classname, package)
                 logger.debug("Traceback:\n%s", traceback.format_exc())
             except ModuleNotFoundError as e:
                 logger.error("package %s not found", package)

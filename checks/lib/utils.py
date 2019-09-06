@@ -5,6 +5,8 @@
 ###############################################################################
 
 from textwrap import TextWrapper
+import dateutil.parser
+import datetime
 import logging
 import getpass
 import json
@@ -265,7 +267,7 @@ def get_dn(session, dn, timeout=None, **kwargs):
         # empty non-None object implies valid empty response
         return {}
 
-def get_class(session, classname, timeout=None, limit=None, stream=False, **kwargs):
+def get_class(session, classname, timeout=None, limit=None, stream=True, **kwargs):
     # perform class query.  If stream is set to true then this will act as an iterator yielding the
     # next result. If the query failed then the first (and only) result of the iterator will be None
     opts = build_query_filters(**kwargs)
@@ -304,7 +306,7 @@ def get_attributes(session=None, dn=None, attribute=None, data=None):
         return None on error or if dn is not found
     """
     if data is None:
-        logger.debug("get attributes '%s' for dn '%s'", attribute, dn)
+        #logger.debug("get attributes '%s' for dn '%s'", attribute, dn)
         data = get_dn(session, dn)
         if data is None or type(data) is not dict or len(data)==0:
             logger.debug("return object for %s is None or invalid", dn)
@@ -402,14 +404,14 @@ def parse_apic_version(version):
 
 ###############################################################################
 #
-# Print functions
+# Print/Parsing functions
 #
 ###############################################################################
 
 def pretty_print(js):
     """ try to convert json to pretty-print format """
     try:
-        return json.dumps(js, indent=4, separators=(",", ":"))
+        return json.dumps(js, indent=4, sort_keys=True, separators=(",", ":"))
     except Exception as e:
         return "%s" % js
 
@@ -423,7 +425,7 @@ def print_table(hdrs, data):
     tw = TextWrapper()
     # only difficult thing here is wrapping the cell if it exceeds the row length, and it could be
     # extended in multiple cells in the same row so we need to determine the longest cell...
-    def get_row_string(column_widths, row_data):
+    def get_row_string(column_widths, row_data, fmt_separator="|"):
         # receive a list of ints representing each column width and a list of text data representing
         # data for each column and return single string line.
         fmt = []
@@ -431,12 +433,17 @@ def print_table(hdrs, data):
         for index, width in enumerate(column_widths):
             fmt.append("{%s:<%s}" % (index, width))
             if index<len(row_data):
-                text = " ".join(row_data[index].strip().split())
+                #text = " ".join(row_data[index].strip().split())
+                text = row_data[index]
                 tw.width = width
-                cols.append(tw.wrap(text))
+                # to honor original user's return characters, we need to wrap each individual line
+                wraps = []
+                for line in text.split("\n"):
+                    wraps+= tw.wrap(line.strip())
+                cols.append(wraps)
             else:
                 cols.append([""])
-        fmt = " | ".join(fmt)
+        fmt = "%s%s%s" % (fmt_separator, (" %s " % fmt_separator).join(fmt), fmt_separator)
         # expand all columns to the max length column
         max_col = max([len(c) for c in cols])
         for c in cols:
@@ -454,12 +461,48 @@ def print_table(hdrs, data):
     final_rows = []
     column_widths = [h.get("length", 5) for h in hdrs]
     separator = ["-"*h.get("length", 5) for h in hdrs]
-    separator_string = get_row_string(column_widths, separator)
+    separator_string = get_row_string(column_widths, separator, fmt_separator="+")
+    final_rows.append(separator_string)
     final_rows.append(get_row_string(column_widths, [h.get("name", "") for h in hdrs]))
     final_rows.append(separator_string)
     for row in data:
         final_rows.append(get_row_string(column_widths, row))
         final_rows.append(separator_string)
     print("\n".join(final_rows))
+
+def parse_timestamp(ts_str):
+    """ return float unix timestamp for timestamp string """
+    dt = dateutil.parser.parse(ts_str)
+    return (time.mktime(dt.timetuple()) + dt.microsecond/1000000.0)
+
+def format_timestamp(timestamp, msec=False):
+    """ format timestamp to datetime string """
+
+    datefmt="%Y-%m-%dT%H:%M:%S"
+    try:
+        t= datetime.datetime.fromtimestamp(int(timestamp)).strftime(datefmt)
+        if msec:
+            if timestamp == 0: t = "%s.000" % t
+            else: t="{0}.{1:03d}".format(t, int((timestamp*1000)%1000))
+        t = "%s%s" % (t, current_tz_string())
+        return t
+    except Exception as e:
+        return timestamp
+
+def format_seconds(s, milli=True):
+    """ format raw seconds to days hh:mm:ss.mmm """
+    sec = s % 60
+    hours = int(s / 3600)
+    mins = int((s - hours * 3600) / 60)
+    days = int(hours / 24)
+    if milli:
+        sec_str = "{0:02d}.{1:03d}".format(int(sec), int((sec*1000)%1000))
+    else:
+        sec_str = "{0:02d}".format(int(sec))
+    if days > 0:
+        hours = hours - days * 24
+        return "%s days %s:%s" % (days, "{0:02.0f}:{1:02.0f}".format(hours, mins, sec), sec_str)
+    else:
+        return "%s:%s" % ("{0:02.0f}:{1:02.0f}".format(hours, mins, sec), sec_str)
 
 

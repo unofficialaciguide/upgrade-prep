@@ -11,8 +11,9 @@ class EncryptionKeyCheck(object):
         configuation.
     """
     def execute_check(self):
-        # execute check must always return a bool representing whether check passed. Further details
-        # can be included in self.details which may be printed based on user preference.
+        # execute check can set self.details with any details to display to user and set
+        # self.success to boolean indicating whether it passed/failed. Note, self.session is set
+        # by the executor and always available during execute_check
         key_configured = get_attributes(
             session=self.session,
             dn="uni/exportcryptkey",
@@ -21,6 +22,7 @@ class EncryptionKeyCheck(object):
         if key_configured is None:
             self.details = "pkiExportEncryptionKey object not found"
         elif key_configured == "yes":
+            self.details = "Encryption key is configured"
             self.success = True
         else:
             self.details = "Encryption key not configured"
