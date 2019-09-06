@@ -33,7 +33,7 @@ if __name__ == "__main__":
         "--debug",
         dest="debug",
         choices=["debug", "info", "warn", "error"],
-        default="debug",
+        default="info",
         help="debugging level",
     )
     parser.add_argument(
@@ -99,6 +99,7 @@ if __name__ == "__main__":
                 sys.exit(1)
 
         executor = CheckExecutor(session=apic_session)
+        logger.info("executing checks, please wait...")
         executor.execute_all_checks()
 
     except Exception as e:

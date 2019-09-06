@@ -14,6 +14,7 @@ ALL_CHECKS = [
     ("cluster_health", "ClusterHealth"),
     ("encryption_key", "EncryptionKeyCheck"),
     ("config_export", "ConfigExportCheck"),
+    ("verify_faults", "VerifyFaults"),
 ]
 
 # moduleNotFoundError present in 3.6 only
