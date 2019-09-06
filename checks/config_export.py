@@ -3,7 +3,6 @@ from . lib.utils import format_seconds
 from . lib.utils import get_class
 from . lib.utils import get_attributes
 from . lib.utils import parse_timestamp
-from . lib.utils import pretty_print
 import logging
 import time
 
@@ -28,12 +27,11 @@ class ConfigExportCheck(object):
                 self.success = False
                 return
             else:
-                attr = get_attributes(data=export)
+                attr = get_attributes(export)
                 if attr is None or len(attr) == 0:
                     self.details = "failed to parse configJob attributes!"
                     self.success = False
                     return
-                attr = attr[0]
                 if attr["operSt"] == "success":
                     # check that 
                     delta = time.time() - parse_timestamp(attr["executeTime"])

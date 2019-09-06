@@ -288,65 +288,36 @@ def get_parent_dn(dn):
     t.pop()
     return "/".join(t)
 
-def get_attributes(session=None, dn=None, attribute=None, data=None):
-    """ get single attribute from a DN.
-        This is a relatively common operation to extract just a single value or
-        just parse the result and get the attribute list.
-
-        if data is provided, then this function assumes a list of objects or
-        raw result from APIC query - for both cases, it assumes all objects are
-        of the same set and only returns list of attribute objects.  Note,
-        if 'attribute' is set then will only return single result of first
-        object with attribute.
-
-        else, session and dn are required and this function will perform APIC
-        query and then return attribute dict.  If 'attribute' is also set, then
-        just raw value of the corresponding attribute for that dn is returned
-
-        return None on error or if dn is not found
+def get_attributes(obj, attribute=None):
+    """ receive data for a single object from a class query or dn lookup and return just the
+        attributes dict. Include children and classname if not already present.  If multiple objects
+        are provided then only the first will be parsed.
+        If attribute name is provided, then instead of returning a dict, will return just the value
+        for the provided attribute name.
+        Return None on error, else single dict representing ACI object attributes
     """
-    if data is None:
-        #logger.debug("get attributes '%s' for dn '%s'", attribute, dn)
-        data = get_dn(session, dn)
-        if data is None or type(data) is not dict or len(data)==0:
-            logger.debug("return object for %s is None or invalid", dn)
-            return
-
-    # handle case raw 'imdata' dict was received
-    if type(data) is dict:
-        if "imdata" in data:
-            data = data["imdata"]
-
-    # always treat remaining result as list of objects
-    ret = []
-    if type(data) is not list:
-        data = [data]
-    for obj in data:
-        if type(obj) is not dict or len(obj)==0:
-            logger.warn("unexpected format for obj: %s" % obj)
-            continue
-        cname = obj.keys()[0]
-        if "attributes" not in obj[cname]:
-            logger.debug("%s does not contain attributes: %s", cname, obj)
-            continue
+    # sliently return None when None is provided
+    if obj is None:
+        return None
+    if isinstance(obj, list):
+        if len(obj) == 0:
+            return None
+        obj = obj[0]
+    if type(obj) is not dict or len(obj) == 0:
+        logger.warn("unexpected format for obj: %s", obj)
+        return None
+    cname = obj.keys()[0]
+    if "attributes" not in obj[cname]:
+        logger.warn("%s does not contain attributes: %s", cname, obj)
+    else:
+        if attribute is not None:
+            return obj[cname]["attributes"].get(attribute, None)
         # add children into 'attributes' so caller functions can pick up child nodes as well
         if "children" in obj[cname]:
             obj[cname]["attributes"]["children"] = obj[cname]["children"]
-        if attribute is not None:
-            # only ever return first value matched when attribute is set
-            if attribute in obj[cname]["attributes"]:
-                return obj[cname]["attributes"][attribute]
-        else:
-            ret.append(obj[cname]["attributes"])
-
-    if attribute is not None:
-        # user request a specific attribute but it was not found, return None
-        return None
-    elif dn is not None and len(ret)==1:
-        # if dn was set, then caller assumes get_dn execute and only one result
-        # is present, so don't return list.
-        return ret[0]
-    return ret
+        if "classname" not in obj[cname]["attributes"]:
+            obj[cname]["attributes"]["classname"] = cname
+        return obj[cname]["attributes"]
 
 def get_fabric_version(session):
     # return dict indexed by device role with current running version. Roles will be either
@@ -439,7 +410,11 @@ def print_table(hdrs, data):
                 # to honor original user's return characters, we need to wrap each individual line
                 wraps = []
                 for line in text.split("\n"):
-                    wraps+= tw.wrap(line.strip())
+                    wrapped = tw.wrap(line.strip())
+                    if len(wrapped) == 0:
+                        wraps+= [""]
+                    else:
+                        wraps+= wrapped
                 cols.append(wraps)
             else:
                 cols.append([""])

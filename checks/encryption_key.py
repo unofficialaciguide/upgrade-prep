@@ -1,5 +1,6 @@
 
 from . lib.utils import get_attributes
+from . lib.utils import get_dn
 import logging
 
 # module level logging
@@ -14,11 +15,8 @@ class EncryptionKeyCheck(object):
         # execute check can set self.details with any details to display to user and set
         # self.success to boolean indicating whether it passed/failed. Note, self.session is set
         # by the executor and always available during execute_check
-        key_configured = get_attributes(
-            session=self.session,
-            dn="uni/exportcryptkey",
-            attribute="keyConfigured"
-        )
+        data = get_dn(session=self.session, dn="uni/exportcryptkey")
+        key_configured = get_attributes(data, attribute="keyConfigured")
         if key_configured is None:
             self.details = "pkiExportEncryptionKey object not found"
         elif key_configured == "yes":

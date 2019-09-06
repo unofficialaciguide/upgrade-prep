@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 ALL_CHECKS = [
     # list of tuples containing package and module that has execute_check function
+    ("cluster_health", "ClusterHealth"),
     ("encryption_key", "EncryptionKeyCheck"),
     ("config_export", "ConfigExportCheck"),
 ]
