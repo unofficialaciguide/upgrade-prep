@@ -92,6 +92,8 @@ def get_cmd(cmd, ignore_error=False):
 
 class OnApicSession(object):
     """ dummy class to force _get to use icurl when executing on apic """
+    def __init__(self):
+        self.api = "http://localhost:7777"
     def close(self):
         pass
 
@@ -101,7 +103,8 @@ def _get(session, url, timeout=None, limit=None, page_size=75000):
         in the iterator (or on the received page) will be None.
     """
     if isinstance(session, OnApicSession):
-        icurl(url, timeout=timeout, limit=limit, page_size=page_size)
+        for obj in icurl(url, timeout=timeout, limit=limit, page_size=page_size):
+            yield obj
         return
     page = 0
     if timeout is None:
