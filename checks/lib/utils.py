@@ -309,7 +309,7 @@ def get_attributes(obj, attribute=None):
     if type(obj) is not dict or len(obj) == 0:
         logger.warn("unexpected format for obj: %s", obj)
         return None
-    cname = obj.keys()[0]
+    cname = list(obj.keys())[0]
     if "attributes" not in obj[cname]:
         logger.warn("%s does not contain attributes: %s", cname, obj)
     else:
