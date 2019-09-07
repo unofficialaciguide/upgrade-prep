@@ -15,6 +15,7 @@ ALL_CHECKS = [
     ("encryption_key", "EncryptionKeyCheck"),
     ("config_export", "ConfigExportCheck"),
     ("verify_faults", "VerifyFaults"),
+    ("verify_software_version", "VerifySoftwareVersion"),
 ]
 
 # moduleNotFoundError present in 3.6 only

@@ -3,6 +3,9 @@
 *.swp
 *.DS_Store
 
+# ignore packaged file
+*.zip
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
