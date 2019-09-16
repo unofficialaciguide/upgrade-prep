@@ -12,8 +12,9 @@ logger = logging.getLogger(__name__)
 ALL_CHECKS = [
     # list of tuples containing package and module that has execute_check function
     ("cluster_health", "ClusterHealth"),
-    ("encryption_key", "EncryptionKeyCheck"),
     ("config_export", "ConfigExportCheck"),
+    ("encryption_key", "EncryptionKeyCheck"),
+    ("fd_vnid_check", "FdVnidCheck"),
     ("verify_faults", "VerifyFaults"),
     ("verify_software_version", "VerifySoftwareVersion"),
 ]
@@ -36,7 +37,7 @@ class CheckExecutor(object):
             {"name": "Check", "length": 25},
             {"name": "Description", "length": 50},
             {"name": "Pass/Fail", "length": 10},
-            {"name": "Pass/Fail Reason", "length": 50},
+            {"name": "Pass/Fail Reason", "length": 70},
         ]
         results = []
         total_checks = 0
