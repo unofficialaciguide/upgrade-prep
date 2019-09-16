@@ -20,7 +20,7 @@ pip install -r requirements.txt
 
 If executing on the APIC, you can zip the source code, upload to the APIC, and execute directly:
 ```
-# create the zip manual
+# create the zip manually
 user1:~host$ git clone https://github.com/unofficialaciguide/upgrade-prep.git
 Cloning into 'upgrade-prep'...
 
@@ -60,7 +60,7 @@ user1:~host$ cd upgrade-prep/
 user1:~host$ pip install -r requirements.txt
 <snip>
 
-user1:~host$ python ./upgrade-prep.zip
+user1:~host$ python ./
 Enter apic hostname      : esc-aci-network.cisco.com:8002
 Enter apic username      : admin
 Enter apic password      :
