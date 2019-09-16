@@ -31,10 +31,8 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--debug",
-        dest="debug",
-        choices=["debug", "info", "warn", "error"],
-        default="info",
-        help="debugging level",
+        action="store_true",
+        help="enable script debugging",
     )
     parser.add_argument(
         "--mode",
@@ -62,9 +60,13 @@ if __name__ == "__main__":
         help="APIC hostname when executing in remote mode",
     )
     args = parser.parse_args()
-    setup_logger(logger, args.debug)
-    setup_logger(logging.getLogger("lib"), args.debug)
-    setup_logger(logging.getLogger("checks"), args.debug)
+    if args.debug:
+        logging_level = "debug"
+    else:
+        logging_level = "critical"
+    setup_logger(logger, logging_level)
+    setup_logger(logging.getLogger("lib"), logging_level)
+    setup_logger(logging.getLogger("checks"), logging_level)
 
     apic_session = OnApicSession()
     try:
@@ -92,14 +94,14 @@ if __name__ == "__main__":
                 url = "https://%s" % args.hostname
             url = re.sub("[/]+$", "", url)
             # create/validate session to APIC
-            logger.info("connecting to APIC %s", url)
+            print("* connecting to APIC %s" % url)
             apic_session = Session(url, args.username, pwd=args.password)
             if not apic_session.login():
                 logger.warn("please try again with correct credentials and hostname")
                 sys.exit(1)
 
-        executor = CheckExecutor(session=apic_session)
-        logger.info("executing checks, please wait...")
+        executor = CheckExecutor(session=apic_session, debug_enabled=args.debug)
+        print("* executing checks, please wait...")
         executor.execute_all_checks()
 
     except Exception as e:

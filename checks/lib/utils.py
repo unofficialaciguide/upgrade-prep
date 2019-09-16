@@ -36,6 +36,7 @@ def setup_logger(logger, level):
         "info": logging.INFO,
         "warn": logging.WARNING,
         "error": logging.ERROR,
+        "critical": logging.CRITICAL,
     }.get(level.lower(), logging.DEBUG))
     logger_handler = logging.StreamHandler(sys.stdout)
 
@@ -381,6 +382,20 @@ def parse_apic_version(version):
 # Print/Parsing functions
 #
 ###############################################################################
+
+def terminal_refresh(rows, init=False):
+    # print a 'refreshing' row of lines to the terminal.  I.e., show an updating progress bar
+    # calling function must provide a list of one-line strings to be printed to the terminal and
+    # this function will perform appropriate refresh before printing the lines on the terminal
+    # The first time this function is called should include init=True
+    if len(rows) == 0:
+        return
+    if init:
+        rows = ["\033[H\033[J"] + rows
+    else:
+        rows = ["\033[1A" * (len(rows) + 1)] + rows
+    sys.stdout.write("%s\n" % "\n".join(['{0: <100}'.format(r) for r in rows]))
+    sys.stdout.flush()
 
 def pretty_print(js):
     """ try to convert json to pretty-print format """
