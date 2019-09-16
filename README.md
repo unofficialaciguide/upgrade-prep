@@ -18,9 +18,34 @@ pip install -r requirements.txt
 
 ## Usage:
 
-If executing on the APIC, you can upload the .zip file and execute directly:
+If executing on the APIC, you can zip the source code, upload to the APIC, and execute directly:
 ```
-python ./upgrade-prep.zip
+# create the zip manually
+user1:~host$ git clone https://github.com/unofficialaciguide/upgrade-prep.git
+Cloning into 'upgrade-prep'...
+
+user1:~host$ cd upgrade-prep/
+user1:~host$ zip -r upgrade-prep.zip ./*
+user1:~host$ ls -al | grep zip
+ rwxr-xr-x 1 admin admin 465303 Sep 16 17:40 upgrade.zip
+
+# upload the .zip file to the APIC, change the permissions to allow execution, and execute it
+fab4-apic1# chmod 755 upgrade-prep.zip
+fab4-apic1# python ./upgrade-prep.zip
+* executing checks, please wait...
+
+Progress (6/6), Executing: VerifySoftwareVersion
+[==================================================] 100.00%, 00:00:17
+
+RESULTS
++------------------------- + -------------------------------------------------- + ---------- + ----------------------------------------------------------------------+
+|Check                     | Description                                        | Pass/Fail  | Pass/Fail Reason                                                      |
++------------------------- + -------------------------------------------------- + ---------- + ----------------------------------------------------------------------+
+|ClusterHealth             | Cluster must be in a healthy state for a           | Pass       | Cluster is healthy                                                    |
+|time: 0.066               | successful upgrade. This check ensures that all    |            |                                                                       |
+|                          | APICs are fully fit                                |            |                                                                       |
++------------------------- + -------------------------------------------------- + ---------- + ----------------------------------------------------------------------+
+<snip>
 ```
 
 You can use the same syntax when executing remotely assuming the requirements have been installed.
@@ -28,12 +53,20 @@ There are additional options for remote connectivity that you can provide via ar
 will prompt the user if not provided.  Use `--help` to get full list of options.
 
 ```
-python ./upgrade-prep.zip
+user1:~host$ git clone https://github.com/unofficialaciguide/upgrade-prep.git
+Cloning into 'upgrade-prep'...
+
+user1:~host$ cd upgrade-prep/
+user1:~host$ pip install -r requirements.txt
+<snip>
+
+user1:~host$ python ./
 Enter apic hostname      : esc-aci-network.cisco.com:8002
 Enter apic username      : admin
 Enter apic password      :
-[EDT 2019-09-06T22:50:02.303] INFO connecting to APIC https://esc-aci-network.cisco.com:8002
-[EDT 2019-09-06T22:50:02.458] INFO executing checks, please wait...
+* connecting to APIC https://esc-aci-network.cisco.com:8002
+* executing checks, please wait...
+
 <snip>
 ```
 
