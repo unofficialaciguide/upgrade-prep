@@ -14,38 +14,40 @@ class VerifyFaults(object):
         # count the number of major/minor faults and list per fault code for user
         self.success = False
         qtf = 'or(eq(faultInfo.severity,"major"),eq(faultInfo.severity,"critical"))'
-        major_count = 0
-        critical_count = 0
-        faults = {} # indexed by fault code
+        # let's index faults by type (major/critical), then by fault code, and contain count
+        faults = {
+            "major": {},
+            "critical": {},
+        }
         for obj in get_class(self.session, "faultInfo", queryTargetFilter=qtf):
             attr = get_attributes(obj)
             if attr is None:
                 self.details = "failed to read or parse faultInfo objects"
                 return
-            if attr['severity'] == "critical":
-                critical_count+=1
-            elif attr['severity'] == "major":
-                major_count+=1
-            if attr['code'] not in faults:
-                faults[attr['code']] = 0
-            faults[attr['code']]+= 1
-        
-        fmt = "{0:<10} {1:<10}"
-        rows = [fmt.format("FaultCode", "Count")]
-        rows.append(fmt.format("-"*10, "-"*10))
-        links = []
-        for code, count in faults.items():
-            links.append('%s/doc/html/FAULT-%s.html' % (self.session.api, code))
-            rows.append(fmt.format(code, count))
+            if attr['severity'] in faults:
+                if attr['code'] not in faults[attr['severity']]:
+                    faults[attr['severity']][attr['code']] = 0
+                faults[attr['severity']][attr['code']]+=1
+
+        # set the counts for simplicity
+        major_count = len(faults['major'])
+        critical_count = len(faults['critical'])
+
+        fmt = "{0:<10} {1:<10} {2}"
+        rows = [fmt.format("FaultCode", "Type", "Count")]
+        rows.append(fmt.format("-"*10, "-"*10, "-"*10))
+        # let's do sorted critical first and then sorted major second
+        for severity in ['critical', 'major']:
+            for code, count in sorted(faults[severity].items(),
+                    key=lambda x: (x[1], x[0]), reverse=True):
+                        rows.append(fmt.format(code, severity, count))
 
         if major_count > 0 or critical_count > 0:
             self.details = "One or more major/critical faults are present and should be addressed "
             self.details+= "or accounted for before continuing with the upgrade.\n\n"
-            self.details+= "Critical Count: %s\n" % critical_count
-            self.details+= "Major Count   : %s\n\n" % major_count
+            self.details+= "Critical Faults: %s\n" % critical_count
+            self.details+= "Major Faults   : %s\n\n" % major_count
             self.details+= "\n".join(rows)
-            #self.details+= "\n\nMore info can be found here:\n"
-            #self.details+= "\n".join(links)
         else:
             self.details = "No major or critical faults present"
             self.success = True
