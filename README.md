@@ -64,7 +64,7 @@ user1:~host$ python ./
 Enter apic hostname      : esc-aci-network.cisco.com:8002
 Enter apic username      : admin
 Enter apic password      :
-* connecting to APIC https://ifav62-ifc1.insieme.local
+* connecting to APIC https://esc-aci-network.cisco.com:8002
 * executing checks, please wait...
 
 <snip>
